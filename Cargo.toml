@@ -1,0 +1,17 @@
+[package]
+name = "wyre"
+version = "0.1.0"
+authors = ["Trevor Wilson <trevor@telco.in>"]
+edition = "2018"
+
+[dependencies]
+futures03 = { package = "futures", version = "0.3.13", features = ["compat"] }
+reqwest = "0.9"
+secrecy = "0.7.0"
+serde = "1.0.126"
+
+[dev-dependencies]
+dotenv = "0.15.0"
+plaid = "1.0.2"
+tokio10 = { package = "tokio", version = "1.0", features = ["rt-multi-thread"] }
+tokio01 = { package = "tokio", version = "0.1" }
