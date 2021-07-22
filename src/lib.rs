@@ -230,6 +230,34 @@ impl Client {
             _ => Err(Error::Api(response.json().compat().await?)),
         }
     }
+
+    /// See [Get Transfer](https://docs.sendwyre.com/docs/get-transfer).
+    pub async fn get_transfer(
+        &self,
+        transfer_id: String,
+        masquerade: Option<String>,
+    ) -> Result<Transfer, Error> {
+        let url = format!(
+            "{}/v3/transfers/{}",
+            self.environment.api_url(),
+            transfer_id
+        );
+
+        let mut response = self
+            .http_client
+            .get(&url)
+            .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .compat()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().compat().await?),
+            _ => Err(Error::Api(response.json().compat().await?)),
+        }
+    }
 }
 
 /// Error received from [Client::from_env]
@@ -439,7 +467,7 @@ mod tests {
             wyre::PaymentMethodStatus::Active
         );
 
-        let _created_transfer = rt_01
+        let created_transfer = rt_01
             .block_on(
                 wyre_client
                     .create_transfer(
@@ -458,8 +486,17 @@ mod tests {
                             preview: Some(false),
                             mute_messages: Some(true),
                         },
-                        Some(account.id),
+                        Some(account.id.clone()),
                     )
+                    .boxed()
+                    .compat(),
+            )
+            .unwrap();
+
+        let _transfer = rt_01
+            .block_on(
+                wyre_client
+                    .get_transfer(created_transfer.id.clone(), Some(account.id.clone()))
                     .boxed()
                     .compat(),
             )
