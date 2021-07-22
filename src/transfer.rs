@@ -4,6 +4,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
+use crate::common::Currency;
+
 /// See [Create Transfer - Parameters](https://docs.sendwyre.com/docs/create-transfer#parameters)
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,7 +18,7 @@ pub struct CreateTransfer {
     pub source_amount: Option<f32>,
 
     /// The currency (ISO 3166-1 alpha-3) to withdrawal from the source wallet.
-    pub source_currency: String,
+    pub source_currency: Currency,
 
     /// An email address, cellphone number, digital currency address or bank
     /// account to send the digital currency to. For bitcoin address use
@@ -33,7 +35,7 @@ pub struct CreateTransfer {
     /// The currency (ISO 3166-1 alpha-3) to deposit. if not provided, the
     /// deposit will be the same as the withdrawal currency (no exchange
     /// performed).
-    pub dest_currency: Option<String>,
+    pub dest_currency: Option<Currency>,
 
     /// An optional user visible message to be sent with the transaction.
     pub message: Option<String>,
@@ -67,10 +69,10 @@ pub struct Transfer {
     pub owner: String,
     pub source: String,
     pub source_amount: f32,
-    pub source_currency: String,
+    pub source_currency: Currency,
     pub dest: String,
     pub dest_amount: f32,
-    pub dest_currency: String,
+    pub dest_currency: Currency,
     pub status: String,
     // pub status_histories: ???,
     pub pending_sub_status: Option<String>,
@@ -82,7 +84,7 @@ pub struct Transfer {
     pub cancelled_at: Option<u64>,
     pub expires_at: Option<u64>,
     pub exchange_rate: Option<f32>,
-    pub fees: HashMap<String, f32>, // currency => amount
+    pub fees: HashMap<Currency, f32>, // currency => amount
     pub total_fees: f32,
     // pub blockchain_tx: ???,
     pub message: Option<String>,

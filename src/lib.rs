@@ -439,7 +439,7 @@ mod tests {
                         wyre::CreateAchPaymentMethod {
                             plaid_processor_token: processor_token_response.processor_token,
                             payment_method_type: wyre::PaymentMethodType::LocalTransfer,
-                            country: "US".into(),
+                            country: wyre::AchPaymentMethodCountry::US,
                         },
                         Some(account.id.clone()),
                     )
@@ -473,10 +473,10 @@ mod tests {
                     .create_transfer(
                         wyre::CreateTransfer {
                             source: format!("paymentmethod:{}:ach", payment_methods.data[0].id),
-                            source_currency: "USD".to_string(),
+                            source_currency: wyre::Currency::USD,
                             source_amount: Some(20.00),
                             dest: "ethereum:0xc12fae05cbe72a501540f260d6c49ddc6f9d9f4d".to_string(),
-                            dest_currency: Some("USDC".to_string()),
+                            dest_currency: Some(wyre::Currency::USDC),
                             dest_amount: None,
                             message: Some("test transfer".into()),
                             notify_url: None,

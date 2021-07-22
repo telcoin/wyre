@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::common::Currency;
+
 /// See [Payment Method Statuses](https://docs.sendwyre.com/docs/payment-method-overview#payment-method-statuses).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -47,7 +49,14 @@ pub struct CreateAchPaymentMethod {
     pub payment_method_type: PaymentMethodType,
 
     /// The only supported country is `US`.
-    pub country: String,
+    pub country: AchPaymentMethodCountry,
+}
+
+/// See [ACH - Create Payment Method](https://docs.sendwyre.com/docs/ach-create-payment-method-processor-token-model)
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AchPaymentMethodCountry {
+    /// United States
+    US,
 }
 
 /// See [ACH - Create Payment Method - Result Format](https://docs.sendwyre.com/docs/ach-create-payment-method-processor-token-model#result-format)
@@ -60,7 +69,7 @@ pub struct PaymentMethod {
     pub owner: String,
     pub created_at: u64,
     pub name: String,
-    pub default_currency: String,
+    pub default_currency: Currency,
     pub status: PaymentMethodStatus,
     // pub status_message: ???,
     // pub waiting_prompts: Vec<???>,
@@ -76,8 +85,8 @@ pub struct PaymentMethod {
     // pub rejectionMessage: ???,
     pub disabled: bool,
     pub supports_payment: bool,
-    pub chargeable_currencies: Vec<String>,
-    pub depositable_currencies: Vec<String>,
+    pub chargeable_currencies: Vec<Currency>,
+    pub depositable_currencies: Vec<Currency>,
     // pub chargeFeeSchedule: ???,
     // pub depositFeeSchedule: ???,
     // pub minCharge: ???,
