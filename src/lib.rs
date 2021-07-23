@@ -27,6 +27,7 @@ pub use payment_method::*;
 pub use transfer::*;
 
 /// A client that can be used to access the Wyre API
+#[derive(Debug, Clone)]
 pub struct Client {
     http_client: ReqwestClient,
     environment: Environment,
