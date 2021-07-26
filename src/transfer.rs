@@ -73,7 +73,7 @@ pub struct Transfer {
     pub dest: String,
     pub dest_amount: Amount,
     pub dest_currency: Currency,
-    pub status: String,
+    pub status: TransferStatus,
     // pub status_histories: ???,
     pub pending_sub_status: Option<String>,
     // pub failure_reason: ???,
@@ -89,4 +89,51 @@ pub struct Transfer {
     // pub blockchain_tx: ???,
     pub message: Option<String>,
     pub custom_id: Option<String>,
+}
+
+/// See [Transfer Lifecycle](https://docs.sendwyre.com/docs/transfer-resources#transfer-lifecycle)
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum TransferStatus {
+    /// A preview transfer. These transfers cannot be confirmed and funds will
+    /// never move on them. They're created by specifying the 'preview=true'
+    /// parameter at time of transfer creation.
+    Preview,
+
+    /// A transfer with a valid quote. This is the default state for newly
+    /// created transfers. These transfers must be confirmed before they're
+    /// executed. Transfers will wait `UNCONFIRMED` for some about of time,
+    /// after which if they are sill `UNCONFIRMED` they will transition to
+    /// `EXPIRED`.
+    Unconfirmed,
+
+    /// A transfer in the pending state means we're working on moving the money
+    /// to its destination. (It does not require any further action from your
+    /// side).
+    Pending,
+
+    /// Once a transfer is fully executed and the funds have been confirmed at
+    /// the destination its status will change to `COMPLETED`.
+    Completed,
+
+    /// Any `UNCONFIRMED` transfer that is not confirmed inside their 30-second
+    /// confirmation window will transition to `EXPIRED`.
+    Expired,
+
+    /// If a transfer cannot be completed for any reason its status will change
+    /// to `FAILED`. If there's anything we can do to make sure the transfer
+    /// goes through we will reach out via support channels before failing a
+    /// transfer.
+    Failed,
+
+    /// If a transfer is reversed at a later time for any reason its status
+    /// will change to `REVERSED`. This happens with ACH payouts, for example,
+    /// where Wyre's banking partner may notify Wyre at a later time.
+    Reversed,
+}
+
+impl Default for TransferStatus {
+    fn default() -> Self {
+        TransferStatus::Pending
+    }
 }
