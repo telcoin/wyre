@@ -1,3 +1,6 @@
+use std::error::Error as StdError;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+
 use reqwest::Error as ReqwestError;
 use serde::Deserialize;
 
@@ -14,6 +17,14 @@ pub enum Error {
 impl From<ReqwestError> for Error {
     fn from(error: ReqwestError) -> Self {
         Error::Transport(error)
+    }
+}
+
+impl StdError for Error {}
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        write!(f, "{:?}", self)
     }
 }
 
