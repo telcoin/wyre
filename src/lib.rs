@@ -284,6 +284,9 @@ impl From<EnvironmentParseError> for ClientFromEnvironmentError {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryFrom;
+
+    use bigdecimal::BigDecimal;
     use futures03::{FutureExt, TryFutureExt};
     use secrecy::SecretString;
     use tokio01::runtime::Runtime as Runtime01;
@@ -475,7 +478,7 @@ mod tests {
                         wyre::CreateTransfer {
                             source: format!("paymentmethod:{}:ach", payment_methods.data[0].id),
                             source_currency: wyre::Currency::USD,
-                            source_amount: Some(20.00),
+                            source_amount: Some(BigDecimal::try_from(20.00).unwrap()),
                             dest: "ethereum:0xc12fae05cbe72a501540f260d6c49ddc6f9d9f4d".to_string(),
                             dest_currency: Some(wyre::Currency::USDC),
                             dest_amount: None,

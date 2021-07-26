@@ -1,4 +1,8 @@
+use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
+
+/// A financial amount (the value is not scaled)
+pub type Amount = BigDecimal;
 
 /// An address
 #[derive(Debug, Clone, Serialize, Deserialize)]

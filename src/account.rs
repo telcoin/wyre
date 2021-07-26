@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::{Address, Currency};
+use crate::common::{Address, Amount, Currency};
 use crate::payment_method::PaymentMethod;
 
 /// See [Get Master Account - Result Format](https://docs.sendwyre.com/docs/get-master-account#result-format)
@@ -96,8 +96,8 @@ pub struct Account {
     pub created_at: u64,
     pub updated_at: u64,
     pub deposit_addresses: HashMap<Currency, String>, // currency => address
-    pub total_balances: HashMap<Currency, f32>,       // currency => amount
-    pub available_balances: HashMap<Currency, f32>,   // currency => amount
+    pub total_balances: HashMap<Currency, Amount>,
+    pub available_balances: HashMap<Currency, Amount>,
     pub profile_fields: Vec<ProfileField>,
 }
 
