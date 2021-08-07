@@ -101,7 +101,7 @@ pub struct Account {
     pub profile_fields: Vec<ProfileField>,
 }
 
-/// See [Create Account - Parameters](https://docs.sendwyre.com/docs/create-account).
+/// See [Create Account - Parameters](https://docs.sendwyre.com/docs/create-account#parameters).
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateAccount {
@@ -132,6 +132,14 @@ pub struct CreateAccount {
     /// communications listed [here](https://docs.sendwyre.com/docs/customer-emails-messaging)
     /// (defaults to `false`).
     pub disable_email: Option<bool>,
+}
+
+/// See [Update Account - Parameters](https://docs.sendwyre.com/docs/submit-account-info#parameters).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateAccount {
+    /// An array containing objects of fieldIds and values.
+    pub profile_fields: Vec<CreateProfileField>,
 }
 
 /// See [Account Status](https://docs.sendwyre.com/docs/account-resource#account-status)

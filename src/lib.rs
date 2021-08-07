@@ -70,7 +70,7 @@ impl Client {
     }
 
     /// See [Get Master Account](https://docs.sendwyre.com/docs/get-master-account).
-    pub async fn get_master_account(&self) -> Result<Transfer, Error> {
+    pub async fn get_master_account(&self) -> Result<MasterAccount, Error> {
         let url = format!("{}/v2/account", self.environment.api_url());
 
         let mut response = self
@@ -97,6 +97,51 @@ impl Client {
             .post(&url)
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
+            .send()
+            .compat()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().compat().await?),
+            _ => Err(Error::Api(response.json().compat().await?)),
+        }
+    }
+
+    /// See [Get Account](https://docs.sendwyre.com/docs/get-account).
+    pub async fn get_account(&self, account_id: String) -> Result<Account, Error> {
+        let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
+
+        let mut response = self
+            .http_client
+            .get(&url)
+            .query(&[("masqueradeAs", account_id)])
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .compat()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().compat().await?),
+            _ => Err(Error::Api(response.json().compat().await?)),
+        }
+    }
+
+    /// See [Update Account](https://docs.sendwyre.com/docs/submit-account-info).
+    pub async fn update_account(
+        &self,
+        account_id: String,
+        update: UpdateAccount,
+    ) -> Result<Account, Error> {
+        let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
+
+        let mut response = self
+            .http_client
+            .post(&url)
+            .query(&[("masqueradeAs", account_id)])
+            .bearer_auth(self.api_secret.expose_secret())
+            .json(&update)
             .send()
             .compat()
             .await?;
