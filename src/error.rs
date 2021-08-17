@@ -34,70 +34,73 @@ impl Display for Error {
 pub struct ApiError {
     /// A unique identifier for this exception. This is very helpful when
     /// contacting support.
-    exception_id: String,
+    pub exception_id: String,
 
-    /// The category of the exception.
+    /// The category of the exception. See [`exception`] module.
     #[serde(rename = "type")]
-    kind: ApiErrorKind,
+    pub kind: String,
 
     /// A more granular specification than `type`.
-    error_code: Option<String>,
+    pub error_code: Option<String>,
 
     /// A human-friendly description of the problem.
-    message: String,
+    pub message: String,
 
     /// Indicates the language of the exception message.
-    language: String,
+    pub language: String,
 
     /// In rare cases, an exception may signal `true` here to indicate a
     /// transient problem. This means the request can be safely re-attempted.
-    transient: bool,
+    pub transient: bool,
 }
 
 /// See [Error Types](https://docs.sendwyre.com/docs/errors#error-types)
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize)]
-pub enum ApiErrorKind {
+pub mod exception {
     /// The action failed due to problems with the request.
-    ValidationException,
+    pub const VALIDATION: &str = "ValidationException";
 
     /// A value was invalid.
-    InvalidValueException,
+    pub const INVALID_VALUE: &str = "InvalidValueException";
 
     /// A required field was missing.
-    FieldRequiredException,
+    pub const FIELD_REQUIRED: &str = "FieldRequiredException";
 
     /// You requested the use of more funds in the specified currency than were
     /// available.
-    InsufficientFundsException,
+    pub const INSUFFICIENT_FUNDS: &str = "InsufficientFundsException";
 
     /// You lack sufficient privilege to perform the requested action.
-    AccessDeniedException,
+    pub const ACCESS_DENIED: &str = "AccessDeniedException";
 
     /// There was a problem completing your transfer request.
-    TransferException,
+    pub const TRANSFER: &str = "TransferException";
 
     /// An MFA action is required to complete the request. In general you
     /// should not get this exception while using API keys.
-    MFARequiredException,
+    pub const MFA_REQUIRED: &str = "MFARequiredException";
 
     /// Please contact us at support@sendwyre.com to resolve this!
-    CustomerSupportException,
+    pub const CUSTOMER_SUPPORT: &str = "CustomerSupportException";
 
     /// You referenced something that could not be located.
-    NotFoundException,
+    pub const NOT_FOUND: &str = "NotFoundException";
 
     /// Your requests have exceeded your usage restrictions. Please contact us
     /// if you need this increased.
-    RateLimitException,
+    pub const RATE_LIMIT: &str = "RateLimitException";
 
     /// The account has had a locked placed on it for potential fraud reasons.
     /// The customer should [contact Wyre support](https://support.sendwyre.com/hc/en-us)
     /// for follow-up.
-    AccountLockedException,
+    pub const ACCOUNT_LOCKED: &str = "AccountLockedException";
 
     /// The account or IP has been blocked due to detected malicious behavior.
-    LockoutException,
+    pub const LOCKOUT: &str = "LockoutException";
 
     /// A problem with our services internally. This should rarely happen.
-    UnknownException,
+    pub const UNKNOWN: &str = "UnknownException";
+
+    /// The account has not been approved and cannot submit transactions.
+    pub const ACCOUNT_HAS_NOT_BEEN_APPROVED_TO_TRANSACT: &str =
+        "AccoutHasNotBeenApprovedToTransactException";
 }
