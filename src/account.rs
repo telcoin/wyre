@@ -84,7 +84,7 @@ pub struct MasterAccountProfile {
     // pub name: ???
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[allow(missing_docs)]
 pub struct Account {
@@ -143,7 +143,7 @@ pub struct UpdateAccount {
 }
 
 /// See [Account Status](https://docs.sendwyre.com/docs/account-resource#account-status)
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum AccountStatus {
     /// Waiting on action from you or the Account holder. This is the initial
@@ -177,7 +177,7 @@ pub enum AccountType {
 }
 
 /// See [Account Fields](https://docs.sendwyre.com/docs/account-resource#account-fields)
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileField {
     /// The specific datapoint encapsulated by the field.
