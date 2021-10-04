@@ -44,10 +44,10 @@ pub struct ApiError {
     pub error_code: Option<String>,
 
     /// A human-friendly description of the problem.
-    pub message: String,
+    pub message: Option<String>,
 
     /// Indicates the language of the exception message.
-    pub language: String,
+    pub language: Option<String>,
 
     /// In rare cases, an exception may signal `true` here to indicate a
     /// transient problem. This means the request can be safely re-attempted.
