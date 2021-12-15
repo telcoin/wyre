@@ -149,4 +149,6 @@ pub enum Currency {
     GYEN,
     /// Digital USD
     ZUSD,
+    /// Polygon
+    MATIC,
 }
