@@ -151,4 +151,8 @@ pub enum Currency {
     ZUSD,
     /// Polygon
     MATIC,
+
+    /// All other currencies.
+    #[serde(other)]
+    Other,
 }
