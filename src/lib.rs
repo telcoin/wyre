@@ -6,9 +6,8 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, clippy::all)]
 
-use futures03::compat::Future01CompatExt;
-use reqwest::r#async::{Body as ReqwestBody, Client as ReqwestClient};
 use reqwest::StatusCode;
+use reqwest::{Body as ReqwestBody, Client as ReqwestClient};
 use secrecy::{ExposeSecret, SecretString};
 use serde::Serialize;
 
@@ -73,18 +72,17 @@ impl Client {
     pub async fn get_master_account(&self) -> Result<MasterAccount, Error> {
         let url = format!("{}/v2/account", self.environment.api_url());
 
-        let mut response = self
+        let response = self
             .http_client
             .get(&url)
             .bearer_auth(self.api_secret.expose_secret())
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -92,19 +90,18 @@ impl Client {
     pub async fn create_account(&self, body: CreateAccount) -> Result<Account, Error> {
         let url = format!("{}/v3/accounts", self.environment.api_url());
 
-        let mut response = self
+        let response = self
             .http_client
             .post(&url)
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -112,19 +109,18 @@ impl Client {
     pub async fn get_account(&self, account_id: String) -> Result<Account, Error> {
         let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
 
-        let mut response = self
+        let response = self
             .http_client
             .get(&url)
             .query(&[("masqueradeAs", account_id)])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -136,20 +132,19 @@ impl Client {
     ) -> Result<Account, Error> {
         let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
 
-        let mut response = self
+        let response = self
             .http_client
             .post(&url)
             .query(&[("masqueradeAs", account_id)])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&update)
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -176,7 +171,7 @@ impl Client {
             masquerade_as: String,
         }
 
-        let mut response = self
+        let response = self
             .http_client
             .post(&url)
             .query(&UploadDocumentQueryParams {
@@ -188,13 +183,12 @@ impl Client {
             .header(reqwest::header::CONTENT_TYPE, document.content_type)
             .body(document.document)
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -206,20 +200,19 @@ impl Client {
     ) -> Result<PaymentMethod, Error> {
         let url = format!("{}/v2/paymentMethods", self.environment.api_url());
 
-        let mut response = self
+        let response = self
             .http_client
             .post(&url)
             .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -232,7 +225,7 @@ impl Client {
     ) -> Result<PaymentMethodList, Error> {
         let url = format!("{}/v2/paymentMethods", self.environment.api_url());
 
-        let mut response = self
+        let response = self
             .http_client
             .get(&url)
             .query(&[
@@ -242,13 +235,12 @@ impl Client {
             ])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -260,20 +252,19 @@ impl Client {
     ) -> Result<Transfer, Error> {
         let url = format!("{}/v3/transfers", self.environment.api_url());
 
-        let mut response = self
+        let response = self
             .http_client
             .post(&url)
             .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 
@@ -289,19 +280,18 @@ impl Client {
             transfer_id
         );
 
-        let mut response = self
+        let response = self
             .http_client
             .get(&url)
             .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
-            .compat()
             .await?;
 
         let status = response.status();
         match status {
-            StatusCode::OK => Ok(response.json().compat().await?),
-            _ => Err(Error::Api(response.json().compat().await?)),
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
         }
     }
 }
