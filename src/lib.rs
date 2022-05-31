@@ -17,6 +17,7 @@ mod environment;
 mod error;
 mod payment_method;
 mod transfer;
+mod user;
 
 pub use account::*;
 pub use common::*;
@@ -24,6 +25,7 @@ pub use environment::*;
 pub use error::*;
 pub use payment_method::*;
 pub use transfer::*;
+pub use user::*;
 
 /// A client that can be used to access the Wyre API
 #[derive(Debug, Clone)]
@@ -294,6 +296,64 @@ impl Client {
             _ => Err(Error::Api(response.json().await?)),
         }
     }
+
+    /// See [Create User](https://docs.sendwyre.com/reference/create-user).
+    pub async fn create_user(&self, req: ModifyUser) -> Result<User, Error> {
+        let url = format!("{}/v3/users", self.environment.api_url());
+
+        let response = self
+            .http_client
+            .post(&url)
+            .json(&req)
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
+
+    /// See [Get User](https://docs.sendwyre.com/reference/get-user)
+    pub async fn get_user(&self, user_id: String) -> Result<User, Error> {
+        let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
+
+        let response = self
+            .http_client
+            .get(&url)
+            .query(&[("masqueradeAs", format!("user:{}", user_id))])
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
+
+    /// See [Update User](https://docs.sendwyre.com/reference/upload-user-data)
+    pub async fn update_user(&self, user_id: String, req: ModifyUser) -> Result<User, Error> {
+        let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
+
+        let response = self
+            .http_client
+            .post(&url)
+            .query(&[("masqueradeAs", format!("user:{}", user_id))])
+            .json(&req)
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
 }
 
 /// Error received from [Client::from_env]
@@ -328,6 +388,51 @@ mod tests {
     use tokio10::runtime::Runtime as Runtime10;
 
     use crate as wyre;
+
+    #[test]
+    fn serde() {
+        use super::*;
+        let x: User = serde_json::from_str(
+            r#"
+            {
+                "id": "US_9BJ94GDE4XA",
+                "status": "APPROVED",
+                "type": "INDIVIDUAL",
+                "country": "US",
+                "createdAt": 1605847016000,
+                "depositAddresses": {},
+                "totalBalances": {},
+                "availableBalances": {},
+                "fields": {
+                  "residenceAddress": {
+                    "value": {
+                      "street1": "1234 Food Court",
+                      "street2": null,
+                      "city": "Minneapolis",
+                      "state": "MN",
+                      "postalCode": "55444",
+                      "country": "US"
+                    },
+                    "error": null,
+                    "status": "SUBMITTED"
+                  },
+                  "firstName": {
+                    "value": "Mooncake",
+                    "error": null,
+                    "status": "SUBMITTED"
+                  },
+                  "lastName": {
+                    "value": "Goodspeed",
+                    "error": null,
+                    "status": "SUBMITTED"
+                  }
+                }
+              }
+            "#,
+        )
+        .unwrap();
+        println!("{:#?}", x);
+    }
 
     #[test]
     fn can_create_ach_transfer_via_plaid() {
