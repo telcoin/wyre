@@ -92,7 +92,7 @@ pub struct ModifyUser {
     /// Maps field IDs to their respective values
     pub fields: ModifyUserFields,
     /// Array of scopes to bias the view returned after the user is created. Only valid scope is currently [`TRANSFER`](UserScopes::Transfer)
-    pub scopes: UserScopes,
+    pub scopes: Vec<UserScopes>,
 }
 
 /// User fields object, used in [`ModifyUser`]
