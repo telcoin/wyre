@@ -156,3 +156,29 @@ pub enum Currency {
     #[serde(other)]
     Other,
 }
+
+/// See [Webhooks - Callback Urls](https://docs.sendwyre.com/docs/webhooks#callback-urls).
+/// This webhook payload is sent when it is created or is always sent for user
+/// and payment method updates.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MetadataCallbackPayload {
+    /// A unique identifier for this webhook subscription
+    pub subscription_id: String,
+
+    /// An SRN for the entity that the callback was designated for
+    pub trigger: String,
+}
+
+/// See [Webhooks - Callback Urls](https://docs.sendwyre.com/docs/webhooks#callback-urls).
+/// Webhook callback payloads either contain the entity that was updated, or
+/// only contains metadata.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum CallbackPayload<T> {
+    /// The metadata of the subscription
+    Metadata(MetadataCallbackPayload),
+
+    /// The updated entity
+    Data(T),
+}
