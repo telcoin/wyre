@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::Address;
 
 /// A Wyre User object indicating approval status
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
     /// The Wyre id of the user
@@ -26,15 +26,16 @@ pub struct User {
 
 /// The field IDs your specific integration has to support depend on your
 /// [integration type](https://docs.sendwyre.com/docs/users#integration-options).
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Hash, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum UserFieldId {
     /// First name of the end user
     FirstName,
     ///Last name of the end user
     LastName,
-    /// The cellphone number of the end user
-    Cellphone,
+    // It's not liking cell phones, but they're not required for the TRANSFER scope
+    // /// The cellphone number of the end user
+    // Cellphone,
     /// The email address of the end user
     Email,
     /// The residence address of the end user
@@ -44,7 +45,7 @@ pub enum UserFieldId {
 }
 
 /// Object indicating the current status of a [user field](UserField)
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct UserField {
     /// A representation of the underlying KYC data. Actual format depends on the type of field
@@ -62,7 +63,7 @@ pub struct UserField {
 
 /// The field type is hard-coded to each field ID and determines the JSON format and upfront
 /// validation rules on it.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
 pub enum UserFieldType {
@@ -82,7 +83,7 @@ pub enum UserFieldType {
 }
 
 /// Balances of user cryptocurrencies
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct UserBalances {
     /// Bitcoin
@@ -94,7 +95,7 @@ pub struct UserBalances {
 }
 
 /// Blockchain addresses for deposit
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub struct DepositAddresses {
     /// Ethereum
@@ -106,7 +107,7 @@ pub struct DepositAddresses {
 }
 
 /// Values used for the `create_user` and `update_user` methods
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ModifyUser {
     /// List of blockchains to connect the user to. Supported: `BTC`, `ETH`, `ALL`. Defaults to
@@ -119,11 +120,11 @@ pub struct ModifyUser {
     pub fields: HashMap<UserFieldId, UserFieldType>,
     /// Array of scopes to bias the view returned after the user is created. Only valid scope is
     /// currently [`TRANSFER`](UserScopes::Transfer)
-    pub scopes: Vec<UserScopes>,
+    pub scopes: Vec<UserScope>,
 }
 
 /// The KYC status of a user
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum UserStatus {
     /// The User has been closed and may not transact.
@@ -162,9 +163,9 @@ pub enum UserFieldStatus {
 }
 
 /// User scopes (currently only [`Transfer`](UserScopes::Transfer) is supported)
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum UserScopes {
+pub enum UserScope {
     /// General access to the Transfers API. Access to this scope is required for all transfers.
     ///
     /// For Swaps, user's must have submitted and approved Name, Address, and Date of Birth.
@@ -177,4 +178,14 @@ pub enum UserScopes {
     ///
     /// For higher limit card purchases, full KYC including ID verification.
     DebitCardL2,
+}
+impl ToString for UserScope {
+    fn to_string(&self) -> String {
+        match self {
+            UserScope::Transfer => "TRANSFER",
+            UserScope::ACH => "ACH",
+            UserScope::DebitCardL2 => "DEBIT_CARD_L2",
+        }
+        .to_owned()
+    }
 }

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 pub type Amount = BigDecimal;
 
 /// An address
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Address {
     /// A valid street address
