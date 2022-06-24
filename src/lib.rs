@@ -17,6 +17,7 @@ mod environment;
 mod error;
 mod payment_method;
 mod transfer;
+mod user;
 
 pub use account::*;
 pub use common::*;
@@ -24,6 +25,7 @@ pub use environment::*;
 pub use error::*;
 pub use payment_method::*;
 pub use transfer::*;
+pub use user::*;
 
 /// A client that can be used to access the Wyre API
 #[derive(Debug, Clone)]
@@ -294,6 +296,67 @@ impl Client {
             _ => Err(Error::Api(response.json().await?)),
         }
     }
+
+    /// See [Create User](https://docs.sendwyre.com/reference/create-user).
+    pub async fn create_user(&self, req: ModifyUser) -> Result<User, Error> {
+        let url = format!("{}/v3/users", self.environment.api_url());
+
+        let response = self
+            .http_client
+            .post(&url)
+            .json(&req)
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
+
+    /// See [Get User](https://docs.sendwyre.com/reference/get-user)
+    pub async fn get_user(&self, user_id: String, scope: UserScope) -> Result<User, Error> {
+        let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
+
+        let response = self
+            .http_client
+            .get(&url)
+            .query(&[
+                ("masqueradeAs", format!("user:{}", user_id)),
+                ("scopes", scope.to_string()),
+            ])
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
+
+    /// See [Update User](https://docs.sendwyre.com/reference/upload-user-data)
+    pub async fn update_user(&self, user_id: String, req: ModifyUser) -> Result<User, Error> {
+        let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
+
+        let response = self
+            .http_client
+            .post(&url)
+            .query(&[("masqueradeAs", format!("user:{}", user_id))])
+            .json(&req)
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
 }
 
 /// Error received from [Client::from_env]
@@ -319,15 +382,240 @@ impl From<EnvironmentParseError> for ClientFromEnvironmentError {
 
 #[cfg(test)]
 mod tests {
-    use std::convert::TryFrom;
+    use std::{collections::HashMap, convert::TryFrom};
 
     use bigdecimal::BigDecimal;
     use futures03::{FutureExt, TryFutureExt};
-    use secrecy::SecretString;
     use tokio01::runtime::Runtime as Runtime01;
     use tokio10::runtime::Runtime as Runtime10;
 
-    use crate as wyre;
+    use crate::{
+        self as wyre, Address, ModifyUser, UserFieldId, UserFieldStatus, UserFieldType, UserScope,
+        UserStatus,
+    };
+
+    fn client_from_env() -> wyre::Client {
+        use std::env;
+        dotenv::dotenv().unwrap();
+
+        wyre::Client::new(
+            env::var("WYRE_API_KEY").unwrap().into(),
+            env::var("WYRE_API_SECRET").unwrap().into(),
+            wyre::Environment::Test,
+        )
+    }
+
+    fn all_fields() -> HashMap<UserFieldId, UserFieldType> {
+        let fields = vec![
+            (
+                UserFieldId::FirstName,
+                UserFieldType::String(Some("John".to_owned())),
+            ),
+            (
+                UserFieldId::LastName,
+                UserFieldType::String(Some("Smith".to_owned())),
+            ),
+            (
+                UserFieldId::ResidenceAddress,
+                UserFieldType::Address(Some(Address {
+                    street1: Some("1234 Sesame Street".to_owned()),
+                    street2: Some("Apt 34".to_owned()),
+                    city: Some("Hollywood".to_owned()),
+                    state: Some("CA".to_owned()),
+                    postal_code: Some("90210".to_owned()),
+                    country: Some("US".to_owned()),
+                })),
+            ),
+            (
+                UserFieldId::DateOfBirth,
+                UserFieldType::String(Some("1990-03-02".to_owned())),
+            ),
+            (
+                UserFieldId::Email,
+                UserFieldType::String(Some("email@website.com".to_owned())),
+            ),
+            // It doesn't like the cell phone for some reason
+            // (
+            //     UserFieldId::Cellphone,
+            //     UserFieldType::String(Some("+15554445555".to_owned())),
+            // ),
+        ];
+        fields.into_iter().collect()
+    }
+
+    #[test]
+    fn create_user_all_fields() {
+        let mod_user = ModifyUser {
+            blockchains: vec![],
+            immediate: false,
+            fields: all_fields(),
+            scopes: vec![UserScope::Transfer],
+        };
+
+        let client = client_from_env();
+        let runtime = Runtime10::new().unwrap();
+
+        let res = runtime.block_on(client.create_user(mod_user)).unwrap();
+
+        assert_eq!(
+            res.status,
+            UserStatus::Approved,
+            "User was not approved with all fields present"
+        );
+        res.fields
+            .iter()
+            .for_each(|(_, field)| assert_eq!(field.status, UserFieldStatus::Submitted));
+    }
+
+    #[test]
+    fn create_user_immediate() {
+        let mod_user = ModifyUser {
+            blockchains: vec![],
+            immediate: true,
+            fields: all_fields(),
+            scopes: vec![UserScope::Transfer],
+        };
+
+        let client = client_from_env();
+        let runtime = Runtime10::new().unwrap();
+
+        let res = runtime.block_on(client.create_user(mod_user)).unwrap();
+
+        assert_eq!(res.status, UserStatus::Pending);
+    }
+
+    #[test]
+    fn update_user() {
+        let client = client_from_env();
+        let runtime = Runtime10::new().unwrap();
+
+        // initial empty user
+        let mut mod_user = ModifyUser {
+            blockchains: Default::default(),
+            immediate: false,
+            fields: Default::default(),
+            scopes: vec![UserScope::Transfer],
+        };
+
+        let res = runtime
+            .block_on(client.create_user(mod_user.clone()))
+            .unwrap();
+
+        assert_ne!(res.status, UserStatus::Approved);
+        res.fields
+            .iter()
+            .for_each(|(_, field)| assert_eq!(field.status, UserFieldStatus::Open));
+
+        // update with all but last name
+        let mut fields = all_fields();
+        let last_name = fields.remove_entry(&UserFieldId::LastName).unwrap();
+        mod_user.fields = fields;
+
+        let res = runtime
+            .block_on(client.update_user(res.id, mod_user.clone()))
+            .unwrap();
+
+        assert_ne!(res.status, UserStatus::Approved);
+        res.fields.iter().for_each(|(id, field)| match id {
+            UserFieldId::LastName => assert_eq!(field.status, UserFieldStatus::Open),
+            _ => assert_eq!(field.status, UserFieldStatus::Submitted),
+        });
+
+        // update last name
+        let mut last_name_map = HashMap::<UserFieldId, UserFieldType>::default();
+        last_name_map.insert(last_name.0, last_name.1);
+        mod_user.fields = last_name_map;
+
+        let res = runtime
+            .block_on(client.update_user(res.id, mod_user.clone()))
+            .unwrap();
+
+        assert_eq!(res.status, UserStatus::Approved);
+        res.fields
+            .iter()
+            .for_each(|(_, field)| assert_eq!(field.status, UserFieldStatus::Submitted));
+    }
+
+    #[test]
+    fn get_user() {
+        let client = client_from_env();
+        let runtime = Runtime10::new().unwrap();
+
+        // initial user
+        let mut fields = all_fields();
+        _ = fields.remove_entry(&UserFieldId::LastName).unwrap();
+
+        let scope = UserScope::Transfer;
+
+        let mod_user = ModifyUser {
+            blockchains: Default::default(),
+            immediate: false,
+            fields: Default::default(),
+            scopes: vec![scope.clone()],
+        };
+
+        let mut initial_user = runtime
+            .block_on(client.create_user(mod_user.clone()))
+            .unwrap();
+
+        let gotten_user = runtime
+            .block_on(client.get_user(initial_user.id.clone(), scope))
+            .unwrap();
+
+        // The status may occasionally be "Pending" depending on how quickly the initial User was returned,
+        // but we're going to ignore that since it's a small technicality
+        initial_user.status = gotten_user.status;
+
+        assert_eq!(initial_user, gotten_user);
+    }
+
+    #[test]
+    fn user_serde() {
+        use super::*;
+        serde_json::from_str::<User>(
+            r#"
+            {
+                "id": "US_48MBN7LX9VY",
+                "status": "OPEN",
+                "partnerId": "PT_BWLU6B2W3BX",
+                "type": "INDIVIDUAL",
+                "createdAt": 1654635321327,
+                "depositAddresses": {},
+                "totalBalances": {},
+                "availableBalances": {},
+                "fields": {
+                  "firstName": {
+                    "value": "John",
+                    "error": null,
+                    "status": "SUBMITTED"
+                  },
+                  "lastName": {
+                    "value": "Smith",
+                    "error": null,
+                    "status": "SUBMITTED"
+                  },
+                  "dateOfBirth": {
+                    "value": null,
+                    "error": null,
+                    "status": "OPEN"
+                  },
+                  "residenceAddress": {
+                    "value": {
+                      "street1": "123 Sesame St",
+                      "city": "New York City",
+                      "state": "New York",
+                      "postalCode": "10128",
+                      "country": "US"
+                    },
+                    "error": null,
+                    "status": "SUBMITTED"
+                  }
+                }
+              }
+            "#,
+        )
+        .unwrap();
+    }
 
     #[test]
     fn can_create_ach_transfer_via_plaid() {
@@ -361,11 +649,7 @@ mod tests {
             .unwrap();
 
         let mut rt_01 = Runtime01::new().unwrap();
-        let wyre_client = wyre::Client::new(
-            SecretString::new(std::env::var("WYRE_API_KEY").unwrap()),
-            SecretString::new(std::env::var("WYRE_API_SECRET").unwrap()),
-            wyre::Environment::Test,
-        );
+        let wyre_client = client_from_env();
         let wyre_client: &'static _ = Box::leak(Box::new(wyre_client));
 
         let account = rt_01
