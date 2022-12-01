@@ -269,3 +269,14 @@ pub enum CallbackPayload<T> {
     /// The updated entity
     Data(T),
 }
+
+/// See [`UploadDocument`].
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+#[allow(missing_docs)]
+pub enum DocumentType {
+    GovtId,
+    DrivingLicense,
+    PassportCard,
+    Passport,
+}

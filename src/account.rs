@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::common::{Address, Amount, Currency};
 use crate::payment_method::PaymentMethod;
+use crate::DocumentType;
 
 /// See [Get Master Account - Result Format](https://docs.sendwyre.com/docs/get-master-account#result-format)
 #[derive(Debug, Clone, Deserialize)]
@@ -363,17 +364,6 @@ pub struct UploadDocument<D> {
     /// - application/msword
     /// - application/vnd.openxmlformats-officedocument.wordprocessingml.document
     pub content_type: String,
-}
-
-/// See [`UploadDocument`].
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[allow(missing_docs)]
-pub enum DocumentType {
-    GovtId,
-    DrivingLicense,
-    PassportCard,
-    Passport,
 }
 
 /// See [`UploadDocument`].
