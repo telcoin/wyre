@@ -108,13 +108,22 @@ impl Client {
     }
 
     /// See [Get Account](https://docs.sendwyre.com/docs/get-account).
-    pub async fn get_account(&self, account_id: String) -> Result<Account, Error> {
+    pub async fn get_account(
+        &self,
+        account_id: String,
+        masquerade: Option<SystemResourceName>,
+    ) -> Result<Account, Error> {
         let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
 
         let response = self
             .http_client
             .get(&url)
-            .query(&[("masqueradeAs", account_id)])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
             .await?;
@@ -131,13 +140,19 @@ impl Client {
         &self,
         account_id: String,
         update: UpdateAccount,
+        masquerade: Option<SystemResourceName>,
     ) -> Result<Account, Error> {
         let url = format!("{}/v3/accounts/{}", self.environment.api_url(), account_id);
 
         let response = self
             .http_client
             .post(&url)
-            .query(&[("masqueradeAs", account_id)])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&update)
             .send()
@@ -155,6 +170,7 @@ impl Client {
         &self,
         account_id: String,
         document: UploadDocument<D>,
+        masquerade: Option<SystemResourceName>,
     ) -> Result<Account, Error> {
         let url = format!(
             "{}/v3/accounts/{}/{}",
@@ -170,7 +186,7 @@ impl Client {
             document_type: Option<DocumentType>,
             #[serde(skip_serializing_if = "Option::is_none")]
             document_sub_type: Option<DocumentSubType>,
-            masquerade_as: String,
+            masquerade_as: Option<String>,
         }
 
         let response = self
@@ -179,7 +195,7 @@ impl Client {
             .query(&UploadDocumentQueryParams {
                 document_type: document.document_type,
                 document_sub_type: document.document_sub_type,
-                masquerade_as: account_id,
+                masquerade_as: masquerade.as_ref().map(ToString::to_string),
             })
             .bearer_auth(self.api_secret.expose_secret())
             .header(reqwest::header::CONTENT_TYPE, document.content_type)
@@ -198,14 +214,19 @@ impl Client {
     pub async fn create_ach_payment_method(
         &self,
         body: CreateAchPaymentMethod,
-        masquerade: Option<String>,
+        masquerade: Option<SystemResourceName>,
     ) -> Result<PaymentMethod, Error> {
         let url = format!("{}/v2/paymentMethods", self.environment.api_url());
 
         let response = self
             .http_client
             .post(&url)
-            .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
             .send()
@@ -221,7 +242,7 @@ impl Client {
     /// See [List Payment Methods](https://docs.sendwyre.com/docs/list-payment-methods).
     pub async fn get_payment_methods(
         &self,
-        masquerade: Option<String>,
+        masquerade: Option<SystemResourceName>,
         offset: usize,
         limit: usize,
     ) -> Result<PaymentMethodList, Error> {
@@ -233,7 +254,12 @@ impl Client {
             .query(&[
                 ("offset", offset.to_string()),
                 ("limit", limit.to_string()),
-                ("masqueradeAs", masquerade.unwrap_or_default()),
+                (
+                    "masqueradeAs",
+                    masquerade
+                        .map(|srn| srn.to_string())
+                        .unwrap_or_else(String::new),
+                ),
             ])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
@@ -250,14 +276,19 @@ impl Client {
     pub async fn create_transfer(
         &self,
         body: CreateTransfer,
-        masquerade: Option<String>,
+        masquerade: Option<SystemResourceName>,
     ) -> Result<Transfer, Error> {
         let url = format!("{}/v3/transfers", self.environment.api_url());
 
         let response = self
             .http_client
             .post(&url)
-            .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .bearer_auth(self.api_secret.expose_secret())
             .json(&body)
             .send()
@@ -274,7 +305,7 @@ impl Client {
     pub async fn get_transfer(
         &self,
         transfer_id: String,
-        masquerade: Option<String>,
+        masquerade: Option<SystemResourceName>,
     ) -> Result<Transfer, Error> {
         let url = format!(
             "{}/v3/transfers/{}",
@@ -285,7 +316,12 @@ impl Client {
         let response = self
             .http_client
             .get(&url)
-            .query(&[("masqueradeAs", masquerade.unwrap_or_default())])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .bearer_auth(self.api_secret.expose_secret())
             .send()
             .await?;
@@ -317,14 +353,26 @@ impl Client {
     }
 
     /// See [Get User](https://docs.sendwyre.com/reference/get-user)
-    pub async fn get_user(&self, user_id: String, scope: UserScope) -> Result<User, Error> {
+    ///
+    /// /// Masquerade should be the User SystemResourceName
+    pub async fn get_user(
+        &self,
+        user_id: String,
+        scope: UserScope,
+        masquerade: Option<SystemResourceName>,
+    ) -> Result<User, Error> {
         let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
 
         let response = self
             .http_client
             .get(&url)
             .query(&[
-                ("masqueradeAs", format!("user:{}", user_id)),
+                (
+                    "masqueradeAs",
+                    masquerade
+                        .map(|srn| srn.to_string())
+                        .unwrap_or_else(String::new),
+                ),
                 ("scopes", scope.to_string()),
             ])
             .bearer_auth(self.api_secret.expose_secret())
@@ -339,13 +387,25 @@ impl Client {
     }
 
     /// See [Update User](https://docs.sendwyre.com/reference/upload-user-data)
-    pub async fn update_user(&self, user_id: String, req: ModifyUser) -> Result<User, Error> {
+    ///
+    /// Masquerade should be the User SystemResourceName
+    pub async fn update_user(
+        &self,
+        user_id: String,
+        req: ModifyUser,
+        masquerade: Option<SystemResourceName>,
+    ) -> Result<User, Error> {
         let url = format!("{}/v3/users/{}", self.environment.api_url(), user_id);
 
         let response = self
             .http_client
             .post(&url)
-            .query(&[("masqueradeAs", format!("user:{}", user_id))])
+            .query(&[(
+                "masqueradeAs",
+                masquerade
+                    .map(|srn| srn.to_string())
+                    .unwrap_or_else(String::new),
+            )])
             .json(&req)
             .bearer_auth(self.api_secret.expose_secret())
             .send()
@@ -390,8 +450,8 @@ mod tests {
     use tokio10::runtime::Runtime as Runtime10;
 
     use crate::{
-        self as wyre, Address, ModifyUser, UserFieldId, UserFieldStatus, UserFieldType, UserScope,
-        UserStatus,
+        self as wyre, Address, ModifyUser, SystemResourceName, UserFieldId, UserFieldStatus,
+        UserFieldType, UserScope, UserStatus,
     };
 
     fn client_from_env() -> wyre::Client {
@@ -512,7 +572,11 @@ mod tests {
         mod_user.fields = fields;
 
         let res = runtime
-            .block_on(client.update_user(res.id, mod_user.clone()))
+            .block_on(client.update_user(
+                res.id.clone(),
+                mod_user.clone(),
+                Some(SystemResourceName::User(res.id)),
+            ))
             .unwrap();
 
         assert_ne!(res.status, UserStatus::Approved);
@@ -527,7 +591,11 @@ mod tests {
         mod_user.fields = last_name_map;
 
         let res = runtime
-            .block_on(client.update_user(res.id, mod_user.clone()))
+            .block_on(client.update_user(
+                res.id.clone(),
+                mod_user,
+                Some(SystemResourceName::User(res.id)),
+            ))
             .unwrap();
 
         assert_eq!(res.status, UserStatus::Approved);
@@ -554,12 +622,14 @@ mod tests {
             scopes: vec![scope.clone()],
         };
 
-        let mut initial_user = runtime
-            .block_on(client.create_user(mod_user.clone()))
-            .unwrap();
+        let mut initial_user = runtime.block_on(client.create_user(mod_user)).unwrap();
 
         let gotten_user = runtime
-            .block_on(client.get_user(initial_user.id.clone(), scope))
+            .block_on(client.get_user(
+                initial_user.id.clone(),
+                scope,
+                Some(SystemResourceName::User(initial_user.id.clone())),
+            ))
             .unwrap();
 
         // The status may occasionally be "Pending" depending on how quickly the initial User was returned,
@@ -731,6 +801,7 @@ mod tests {
                             document: smallest_jpeg,
                             content_type: "image/jpeg".to_string(),
                         },
+                        Some(SystemResourceName::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -749,6 +820,7 @@ mod tests {
                             document: smallest_jpeg,
                             content_type: "image/jpeg".to_string(),
                         },
+                        Some(SystemResourceName::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -764,7 +836,7 @@ mod tests {
                             payment_method_type: wyre::PaymentMethodType::LocalTransfer,
                             country: wyre::AchPaymentMethodCountry::US,
                         },
-                        Some(account.id.clone()),
+                        Some(SystemResourceName::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -778,7 +850,11 @@ mod tests {
         let payment_methods = rt_01
             .block_on(
                 wyre_client
-                    .get_payment_methods(Some(account.id.clone()), 0, 10)
+                    .get_payment_methods(
+                        Some(SystemResourceName::Account(account.id.clone())),
+                        0,
+                        10,
+                    )
                     .boxed()
                     .compat(),
             )
@@ -809,7 +885,7 @@ mod tests {
                             preview: Some(false),
                             mute_messages: Some(true),
                         },
-                        Some(account.id.clone()),
+                        Some(SystemResourceName::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -819,7 +895,10 @@ mod tests {
         let _transfer = rt_01
             .block_on(
                 wyre_client
-                    .get_transfer(created_transfer.id.clone(), Some(account.id.clone()))
+                    .get_transfer(
+                        created_transfer.id,
+                        Some(SystemResourceName::Account(account.id)),
+                    )
                     .boxed()
                     .compat(),
             )

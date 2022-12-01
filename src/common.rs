@@ -1,6 +1,93 @@
 use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 
+/// System Resource Name is a typed identifier that may reference any object within the Wyre
+/// platform. Many of our API calls and data schemas leverage SRNs in order to add flexibility
+/// and decouple services. All SRNs follow the same URI-like format:
+///
+/// `type:identifier`
+#[derive(Debug, Clone)]
+pub enum SystemResourceName {
+    /// A Wyre account, e.g. `account:AC_XXXXXXXX`
+    Account(String),
+    /// A Wyre user, e.g. `user:US_XXXXXXXX`
+    User(String),
+    /// A single wallet that can hold cryptocurrency, e.g. `wallet:WA_XXXXXXXX`
+    Wallet(String),
+    /// A transfer (possibly including a conversion) of currency
+    Transfer(String),
+    /// A payment method such as a bank account, e.g. `paymentmethod:PA_XXXXXXXX`
+    PaymentMethod(String),
+    /// This is attached as a suffix to the payment method when pulling funds into and account via ACH.
+    ///
+    /// Example:
+    /// `"source": "paymentmethod:PA-W7YN28ABCHT:ach"`
+    AchPaymentMethod(String),
+    /// An email address, e.g. `email:dev@sendwyre.com`
+    Email(String),
+    /// A cellphone number, e.g. `cellphone:+15555555555`
+    CellPhone(String),
+    /// Bitcoin blockchain addresses. e.g. `bitcoin:1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2`
+    ///
+    /// NOTE: TestWyre expects a Bitcoin testnet address i.e. `bitcoin:n4VQ5YdHf7hLQ2gWQYYrcxoE5B7nWuDFNF`.
+    Bitcoin(String),
+    /// Ethereum blockchain address. e.g.
+    /// `ethereum:0xBB9bc244D798123fDe783fCc1C72d3Bb8C1894131`
+    ///
+    /// NOTE:
+    /// Transfers of ERC-20 tokens use the "ethereum:" SRN.
+    Ethereum(String),
+    /// Avalanche (AVAX) blockchain addresses (X and C chains). e.g.
+    ///
+    /// X Chain:
+    /// `avalanche:X-fuji159ney792ctzweqfhuc39rkp0h8fsmzjhu4fjk4`
+    ///
+    /// C Chain:
+    /// `avalanche:0x6b53a58cf99b698afe78035e58f1a8f5f8235663`
+    Avalanche(String),
+    /// Stellar (XLM) blockchain address. e.g.
+    /// `stellar:GD7WXI7AOAK2CIPZVBEFYLS2NQZI2J4WN4HFYQQ4A2OMFVWGWAL3IW7K:LEMNM383ACX`
+    ///
+    /// NOTE:
+    /// Transfers from an external stellar address will require the User ID in the memo.
+    Stellar(String),
+    /// Algorand (ALGO and aUSDC) blockchain address.
+    Algorand(String),
+    /// Polygon (MATIC) blockchain address.
+    Matic(String),
+    /// Flow blockchain address. e.g.
+    /// `flow:0xead892083b3e2c6c`
+    Flow(String),
+    /// Loopring blockchain address.
+    Loopring(String),
+}
+impl ToString for SystemResourceName {
+    fn to_string(&self) -> String {
+        match self {
+            SystemResourceName::PaymentMethod(identifier) => {
+                format!("paymentmethod:{}", identifier)
+            }
+            SystemResourceName::AchPaymentMethod(identifier) => {
+                format!("paymentmethod:{}:ach", identifier)
+            }
+            SystemResourceName::Email(identifier) => format!("email:{}", identifier),
+            SystemResourceName::CellPhone(identifier) => format!("cellphone:{}", identifier),
+            SystemResourceName::Bitcoin(identifier) => format!("bitcoin:{}", identifier),
+            SystemResourceName::Ethereum(identifier) => format!("ethereum:{}", identifier),
+            SystemResourceName::Avalanche(identifier) => format!("avalanche:{}", identifier),
+            SystemResourceName::Stellar(identifier) => format!("stellar:{}", identifier),
+            SystemResourceName::Algorand(identifier) => format!("algorand:{}", identifier),
+            SystemResourceName::Matic(identifier) => format!("matic:{}", identifier),
+            SystemResourceName::Flow(identifier) => format!("flow:{}", identifier),
+            SystemResourceName::Loopring(identifier) => format!("loopring:{}", identifier),
+            SystemResourceName::Account(identifier) => format!("account:{}", identifier),
+            SystemResourceName::User(identifier) => format!("user:{}", identifier),
+            SystemResourceName::Wallet(identifier) => format!("wallet:{}", identifier),
+            SystemResourceName::Transfer(identifier) => format!("transfer:{}", identifier),
+        }
+    }
+}
+
 /// A financial amount (the value is not scaled)
 pub type Amount = BigDecimal;
 
