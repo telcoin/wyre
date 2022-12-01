@@ -417,6 +417,67 @@ impl Client {
             _ => Err(Error::Api(response.json().await?)),
         }
     }
+
+    /// See [Get KYC Onboarding URL](https://docs.sendwyre.com/reference/get-onboarding-url)
+    ///
+    /// Retrieve URL for users to go through higher limit KYC onboarding
+    pub async fn get_kyc_onboarding_url(
+        &self,
+        user_id: String,
+        country_code: Option<String>,
+    ) -> Result<OnboardingUrl, Error> {
+        let url = format!(
+            "{}/v3/users/{}/onboarding",
+            self.environment.api_url(),
+            user_id
+        );
+
+        let response = self
+            .http_client
+            .get(&url)
+            .query(&["countryCode", country_code.as_deref().unwrap_or_default()])
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
+
+    /// See [Update User](https://docs.sendwyre.com/reference/upload-user-data)
+    ///
+    /// Masquerade should be the User SystemResourceName
+    pub async fn update_user_document<D: Into<ReqwestBody>>(
+        &self,
+        user_id: String,
+        req: UserDocumentUpload<D>,
+    ) -> Result<User, Error> {
+        let url = format!(
+            "{}/v3/users/{}/{}",
+            self.environment.api_url(),
+            user_id,
+            req.field_id
+        );
+
+        let response = self
+            .http_client
+            .post(&url)
+            .query(&[("docType", req.doc_type)])
+            .header(reqwest::header::CONTENT_TYPE, req.content_type)
+            .body(req.document)
+            .bearer_auth(self.api_secret.expose_secret())
+            .send()
+            .await?;
+
+        let status = response.status();
+        match status {
+            StatusCode::OK => Ok(response.json().await?),
+            _ => Err(Error::Api(response.json().await?)),
+        }
+    }
 }
 
 /// Error received from [Client::from_env]
