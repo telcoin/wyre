@@ -199,7 +199,7 @@ pub enum DocumentType {
 /// and decouple services. All SRNs follow the same URI-like format:
 ///
 /// `type:identifier`
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub enum SystemResourceName {
     /// A Wyre account, e.g. `account:AC_XXXXXXXX`
     Account(String),
