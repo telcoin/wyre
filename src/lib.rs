@@ -511,7 +511,7 @@ mod tests {
     use tokio10::runtime::Runtime as Runtime10;
 
     use crate::{
-        self as wyre, Address, ModifyUser, SystemResourceName, UserFieldId, UserFieldStatus,
+        self as wyre, Address, ModifyUser, SystemResourceName as SRN, UserFieldId, UserFieldStatus,
         UserFieldType, UserScope, UserStatus,
     };
 
@@ -633,11 +633,7 @@ mod tests {
         mod_user.fields = fields;
 
         let res = runtime
-            .block_on(client.update_user(
-                res.id.clone(),
-                mod_user.clone(),
-                Some(SystemResourceName::User(res.id)),
-            ))
+            .block_on(client.update_user(res.id.clone(), mod_user.clone(), Some(SRN::User(res.id))))
             .unwrap();
 
         assert_ne!(res.status, UserStatus::Approved);
@@ -652,11 +648,7 @@ mod tests {
         mod_user.fields = last_name_map;
 
         let res = runtime
-            .block_on(client.update_user(
-                res.id.clone(),
-                mod_user,
-                Some(SystemResourceName::User(res.id)),
-            ))
+            .block_on(client.update_user(res.id.clone(), mod_user, Some(SRN::User(res.id))))
             .unwrap();
 
         assert_eq!(res.status, UserStatus::Approved);
@@ -689,7 +681,7 @@ mod tests {
             .block_on(client.get_user(
                 initial_user.id.clone(),
                 scope,
-                Some(SystemResourceName::User(initial_user.id.clone())),
+                Some(SRN::User(initial_user.id.clone())),
             ))
             .unwrap();
 
@@ -862,7 +854,7 @@ mod tests {
                             document: smallest_jpeg,
                             content_type: "image/jpeg".to_string(),
                         },
-                        Some(SystemResourceName::Account(account.id.clone())),
+                        Some(SRN::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -881,7 +873,7 @@ mod tests {
                             document: smallest_jpeg,
                             content_type: "image/jpeg".to_string(),
                         },
-                        Some(SystemResourceName::Account(account.id.clone())),
+                        Some(SRN::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -897,7 +889,7 @@ mod tests {
                             payment_method_type: wyre::PaymentMethodType::LocalTransfer,
                             country: wyre::AchPaymentMethodCountry::US,
                         },
-                        Some(SystemResourceName::Account(account.id.clone())),
+                        Some(SRN::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -911,11 +903,7 @@ mod tests {
         let payment_methods = rt_01
             .block_on(
                 wyre_client
-                    .get_payment_methods(
-                        Some(SystemResourceName::Account(account.id.clone())),
-                        0,
-                        10,
-                    )
+                    .get_payment_methods(Some(SRN::Account(account.id.clone())), 0, 10)
                     .boxed()
                     .compat(),
             )
@@ -932,10 +920,12 @@ mod tests {
                 wyre_client
                     .create_transfer(
                         wyre::CreateTransfer {
-                            source: format!("paymentmethod:{}:ach", payment_methods.data[0].id),
+                            source: SRN::AchPaymentMethod(payment_methods.data[0].id.clone()),
                             source_currency: wyre::Currency::USD,
                             source_amount: Some(BigDecimal::try_from(20.00).unwrap()),
-                            dest: "ethereum:0xc12fae05cbe72a501540f260d6c49ddc6f9d9f4d".to_string(),
+                            dest: SRN::Ethereum(
+                                "0xc12fae05cbe72a501540f260d6c49ddc6f9d9f4d".to_string(),
+                            ),
                             dest_currency: Some(wyre::Currency::USDC),
                             dest_amount: None,
                             message: Some("test transfer".into()),
@@ -946,7 +936,7 @@ mod tests {
                             preview: Some(false),
                             mute_messages: Some(true),
                         },
-                        Some(SystemResourceName::Account(account.id.clone())),
+                        Some(SRN::Account(account.id.clone())),
                     )
                     .boxed()
                     .compat(),
@@ -956,10 +946,7 @@ mod tests {
         let _transfer = rt_01
             .block_on(
                 wyre_client
-                    .get_transfer(
-                        created_transfer.id,
-                        Some(SystemResourceName::Account(account.id)),
-                    )
+                    .get_transfer(created_transfer.id, Some(SRN::Account(account.id)))
                     .boxed()
                     .compat(),
             )

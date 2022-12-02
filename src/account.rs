@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::common::{Address, Amount, Currency};
 use crate::payment_method::PaymentMethod;
-use crate::DocumentType;
+use crate::{DocumentType, SystemResourceName};
 
 /// See [Get Master Account - Result Format](https://docs.sendwyre.com/docs/get-master-account#result-format)
 #[derive(Debug, Clone, Deserialize)]
@@ -14,7 +14,7 @@ use crate::DocumentType;
 #[allow(missing_docs)]
 pub struct MasterAccount {
     pub id: String,
-    pub srn: String,
+    pub srn: SystemResourceName,
     pub created_at: u64,
     pub updated_at: Option<u64>,
     pub deleted_at: Option<u64>,

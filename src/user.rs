@@ -207,6 +207,7 @@ pub enum FieldId {
     /// A scan or photo of the back of a drivers license, ID, or passport of the user
     GovernmentIdBack,
 }
+
 impl std::fmt::Display for FieldId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
