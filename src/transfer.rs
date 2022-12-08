@@ -4,14 +4,17 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::{Amount, Currency};
+use crate::{
+    common::{Amount, Currency},
+    SystemResourceName,
+};
 
 /// See [Create Transfer - Parameters](https://docs.sendwyre.com/docs/create-transfer#parameters)
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTransfer {
     /// An SRN representing an account that the funds will be retrieved from.
-    pub source: String,
+    pub source: SystemResourceName,
 
     /// The amount to withdrawal from the source, in units of `sourceCurrency`.
     /// Only include `sourceAmount` OR `destAmount`, not both.
@@ -25,7 +28,7 @@ pub struct CreateTransfer {
     /// "bitcoin:[address]". Note: cellphone numbers are assumed to be a US
     /// number, for international numbers include a '+' and the country code as
     /// the prefix.
-    pub dest: String,
+    pub dest: SystemResourceName,
 
     /// Specifies the total amount of currency to deposit (as defined in
     /// `depositCurrency`). Only include `sourceAmount` OR `destAmount`, not
@@ -67,10 +70,10 @@ pub struct CreateTransfer {
 pub struct Transfer {
     pub id: String,
     pub owner: String,
-    pub source: String,
+    pub source: SystemResourceName,
     pub source_amount: Amount,
     pub source_currency: Currency,
-    pub dest: String,
+    pub dest: SystemResourceName,
     pub dest_amount: Amount,
     pub dest_currency: Currency,
     pub status: TransferStatus,

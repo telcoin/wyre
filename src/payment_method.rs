@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::common::Currency;
+use crate::{common::Currency, SystemResourceName};
 
 /// See [Payment Method Statuses](https://docs.sendwyre.com/docs/payment-method-overview#payment-method-statuses).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Deserialize)]
@@ -66,7 +66,7 @@ pub enum AchPaymentMethodCountry {
 #[allow(missing_docs)]
 pub struct PaymentMethod {
     pub id: String,
-    pub owner: String,
+    pub owner: SystemResourceName,
     pub created_at: u64,
     pub name: String,
     pub default_currency: Currency,
@@ -94,7 +94,7 @@ pub struct PaymentMethod {
     // pub minDeposit: ???,
     // pub maxDeposit: ???,
     // pub documents: Vec<???>,
-    pub srn: String,
+    pub srn: SystemResourceName,
 }
 
 /// See [List Payment Methods - Result Format](https://docs.sendwyre.com/docs/list-payment-methods#result-format)

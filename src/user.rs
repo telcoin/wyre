@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::Address;
+use crate::{Address, DocumentType};
 
 /// A Wyre User object indicating approval status
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -188,4 +188,61 @@ impl ToString for UserScope {
         }
         .to_owned()
     }
+}
+
+/// A URL that allows your users to go through the higher limits KYC flow.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct OnboardingUrl {
+    #[serde(rename = "camelCase")]
+    onboarding_url: String,
+}
+
+/// The fieldId that the uploaded user document is associated with. Only fieldId values of type
+/// `governmentIdFront` and `governmentIdBack` will accept a document upload.
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum FieldId {
+    /// A scan or photo of the front of a drivers license, ID, or passport of the user
+    GovernmentIdFront,
+    /// A scan or photo of the back of a drivers license, ID, or passport of the user
+    GovernmentIdBack,
+}
+
+impl std::fmt::Display for FieldId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                FieldId::GovernmentIdFront => "governmentIdFront",
+                FieldId::GovernmentIdBack => "governmentIdBack",
+            }
+        )
+    }
+}
+
+/// See [Upload User Document - Parameters](https://docs.sendwyre.com/reference/upload-user-document#parameters)
+pub struct UserDocumentUpload<D> {
+    /// The fieldId that the uploaded document is associated with. Only fieldId values of type
+    /// `governmentIdFront` and `governmentIdBack` will accept a document upload.
+    pub field_id: FieldId,
+
+    /// Possible values are `GOVT_ID`, `DRIVING_LICENSE`, `PASSPORT_CARD` and `PASSPORT` for
+    /// `governmentIdFront`. Possible values are `GOVT_ID`, `DRIVING_LICENSE`, `PASSPORT_CARD` for
+    /// `governmentIdBack`.
+    pub doc_type: DocumentType,
+
+    /// The document to upload. Supported document types are PDF, JPEG, PNG, DOC, and DOCX.
+    ///
+    /// Mmaximum file upload size is 7.75MB
+    pub document: D,
+
+    /// The content type of the document. See [Supported Document Types](https://docs.sendwyre.com/docs/upload-document#section-supported-document-types).
+    ///
+    /// - application/pdf
+    /// - image/jpeg
+    /// - image/png
+    /// - application/msword
+    /// - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    pub content_type: String,
 }
